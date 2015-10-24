@@ -5,7 +5,7 @@ except ImportError:
 
 config = {
     'description': 'Sanfransisco Crime classification project',
-    'author': 'Emmanuel John',
+    'author': 'Emmanuel John, Sneha Kadam, Nichodemus Mbwambo',
     'url': 'URL to get it at.',
     'download_url': 'Where to download it.',
     'author_email': 'My email.',
