@@ -50,6 +50,7 @@ class CsvReader:
 
     # e.g csv.getValueAt(0, "Dates")
     def getValueAt(self, row, col):
+        # TODO: handle case where number is passed for col 
         return self.data[row][col]
 
 if __name__ == '__main__':
