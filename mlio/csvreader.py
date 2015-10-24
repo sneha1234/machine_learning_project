@@ -53,9 +53,3 @@ class CsvReader:
         # TODO: handle case where number is passed for col 
         return self.data[row][col]
 
-if __name__ == '__main__':
-    csv = CsvReader("/Users/emmanuj/projects/crime_classification/machine_learning_project/tests/sample_csv.csv",",")
-    csv.read()
-
-    print(csv.getValueAt(0,0))
-
