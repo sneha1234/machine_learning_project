@@ -38,6 +38,7 @@ def kmeans(data, k, niter): # Data is a list of tuples
 		#print "iteration: ", r, "assignments: ", assignments
 		i = 0
 		for c in clusters:
+			if not clusters[c]: continue
 			centroids[i] = [0,0]
 			for j in clusters[c]:
 				centroids[i][0] = centroids[i][0] + data[j][0]
@@ -81,15 +82,37 @@ def train(data):
 		else:
 			c_count[d] = 1
 
-	
+
 
 
 
 
 if __name__ == '__main__':
-	df = readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
-	#print df.loc[:,"Category"]
-	#train(df)
+	filename = sys.argv[1]
+	if(len(sys.argv) < 2):
+		print "Usage: python nb.py <data_file>"
+		sys.exit(0)
+
+	data = readData(filename) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
+
+	x = data.loc[:,"X"].values.tolist()
+	y = data.loc[:,"Y"].values.tolist()
+	loc = [[x[i], y[i] ]for i in range(len(data))]
+	k = 50
+	loc_clusters = kmeans(loc, k, 40)
+
+	clust_count = {}
+	for i in range(k):
+		clust_count[i] = 0
+
+	for i in range(len(data)):
+		clust_count[loc_clusters[i]] = clust_count[loc_clusters[i]] + 1
+		#print x[i], y[i], loc_clusters[i]
+	for key in clust_count:
+		print key, clust_count[key]
+
+	sys.exit(0)
+
 	'''
 	data = [[-122.429602623594,37.7179038840514],
 		[122.411836440259,37.730379007001204],
@@ -122,5 +145,5 @@ if __name__ == '__main__':
 		[32.91665375,-117.04057364]
 	]
 
-	train(df)
-	#print(kmeans(data, 3, 5))
+	#train(df)
+	print(kmeans(data, 2, 5))
