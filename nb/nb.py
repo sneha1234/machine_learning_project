@@ -49,42 +49,98 @@ def kmeans(data, k, niter): # Data is a list of tuples
 
 		clusters = clust_empty
 	return assignments
+def flattenAttributes(data, assignments, k):
+	values = []
+	#lets process time
+	for i in range(24):
+		values.append("time_"+str(i))
 
-def train(data):
+	#next location
+	for i in range(k):
+		values.append("loc_"+str(i))
+
+	#list of unique districts
+	PdDistricts = pd.unique(data.PdDistrict.ravel())
+	values += PdDistricts.tolist()
+
+	#list of unique day of week
+	dofw = pd.unique(data.DayOfWeek.ravel())
+	values += dofw.tolist()
+
+	return values
+
+def train(data, loc_clusters, k):
 	# Do some preprocessing
 	#listdata = data.tolist()
-	time = range(24)
-	k = 20 # Number of clusters in location data
-	attribute_values = {"Dates":Set(time)}
-	loc_clusters = [] # Mapping of location data to different clusters
-	for i in range(len(column_names)):
-		if column_names[i] in ["Dates","Category","Y","Address"]:
-			continue
-		if column_names[i] == "X":
-			x = data.loc[:,column_names[i]].values.tolist()
-			y = data.loc[:,"Y"].values.tolist()
-			loc = [[x[i], y[i] ]for i in range(len(data))]
-			loc_clusters = kmeans(loc, k, 40)
-
-
-
-			attribute_values["location"] = range(k)
-		else:
-			attribute_values[column_names[i]] = Set(data.loc[:,column_names[i]].values.tolist())
-
+	attr = flattenAttributes(data, loc_clusters, k)
 	# Next lets retrieve the classes and their counts
 	N = len(data)
 	c_count = {}
 	c = data.loc[:,"Category"]
+	cat_id = {}
+	i =0
 	for d in c:
 		if( d in c_count):
 			c_count[d] = c_count[d] + 1
 		else:
 			c_count[d] = 1
+			cat_id[d] = i
+			i = i+1
+	# initialize all probalities to 0
+	probs = dict(zip(attr, [0]* len(attr)))
+	train_data = []
 
+	for i in range(len(cat_id)):
+		train_data.append(copy.deepcopy(probs))
 
+	#go through rows in data and compute count
+	for index, row in data.iterrows():
+		class_i = row["Category"]
+		#time
+		time_i =  "time_" + str(int(row["Dates"].split(" ")[1].split(":")[0])) # 2014-12-24 05:20:00 --> time_5 (hour part of the time)
+		train_data[cat_id[class_i]][time_i]+=1
 
+		#day of week
+		train_data[cat_id[class_i]][row["DayOfWeek"]]+=1
 
+		#PdDistrict
+		train_data[cat_id[class_i]][row["PdDistrict"]]+=1
+
+		#location
+		loc_i =  "loc_" + str(loc_clusters[index])
+		train_data[cat_id[class_i]][loc_i]+=1
+
+	return [train_data, c_count]
+
+def saveKmeans(loc_clusters, filename):
+	with open(filename,"w") as f:
+		for i in loc_clusters:
+			f.write(str(i)+"\n")
+
+def readKmeans(path):
+	clust = []
+	with open(filename,'r') as f:
+		for line in f:
+			clust.append(int(line.strip()))
+	return clust
+
+def saveTraingingData(train_data, class_data, path):
+	t_file = path ==""?"train_data.txt":path+"/train_data.txt"
+	c_file = path ==""?"cat_data.txt":path+"/cat_data.txt"
+	with open(t_file,'w') as f:
+		for class_i in train_data:
+			l = []
+			for key,val in class_i:
+				l.append(key +":"+str(val))
+			f.write(" ".join(l) +"\n")
+	with open(c_file, 'w') as f:
+		for key, val in class_data:
+			f.write(key+":"+str(val)+"\n")
+
+def loadTrainingData(filename):
+	pass
+
+def classify():
 
 
 if __name__ == '__main__':
@@ -95,11 +151,14 @@ if __name__ == '__main__':
 
 	data = readData(filename) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
 
+	print train(data, [], 10)
+	sys.exit(0)
 	x = data.loc[:,"X"].values.tolist()
 	y = data.loc[:,"Y"].values.tolist()
 	loc = [[x[i], y[i] ]for i in range(len(data))]
-	k = 50
-	loc_clusters = kmeans(loc, k, 40)
+	k = 10
+	loc_clusters = kmeans(loc, k, 5)
+
 
 	clust_count = {}
 	for i in range(k):
