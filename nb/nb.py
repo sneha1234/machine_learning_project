@@ -9,9 +9,10 @@ import random
 import copy
 
 column_names = ['Dates','Category','DayOfWeek','PdDistrict','Address','X','Y']
+column_names_test = ['Dates','DayOfWeek','Address','PdDistrict','X','Y']
 
-def readData(filename):
-	df = pd.read_csv(filename, quoting=1, usecols=column_names)
+def readData(filename, colnames= column_names):
+	df = pd.read_csv(filename, quoting=1, usecols=colnames)
 	return df
 
 # TODO optimize kmeans for improved runtimes
@@ -48,7 +49,7 @@ def kmeans(data, k, niter): # Data is a list of tuples
 			i = i+1
 
 		clusters = clust_empty
-	return assignments
+	return [assignments, centroids]
 def flattenAttributes(data, assignments, k):
 	values = []
 	#lets process time
@@ -110,99 +111,184 @@ def train(data, loc_clusters, k):
 		loc_i =  "loc_" + str(loc_clusters[index])
 		train_data[cat_id[class_i]][loc_i]+=1
 
-	return [train_data, c_count]
+	return [train_data, c_count, cat_id]
 
-def saveKmeans(loc_clusters, filename):
-	with open(filename,"w") as f:
+def saveKmeans(loc_clusters, centroids, path=""):
+	assignments ="kmeans.txt"
+	centr = "centroids.txt"
+	if (path != ""):
+		assignments = path+"/"+assignments
+		centr = path + "/"+ centr
+
+	with open(assignments,"w") as f:
 		for i in loc_clusters:
 			f.write(str(i)+"\n")
 
-def readKmeans(path):
+	with open(centr,"w") as f:
+		for point in centroids:
+			f.write(str(point[0]) +":"+ str(point[1])+"\n")
+
+
+def readKmeans(path=""):
+	assn ="kmeans.txt"
+	centr = "centroids.txt"
+	if (path != ""):
+		assn = path+"/"+ assn
+		centr = path +"/"+ assn
+
 	clust = []
-	with open(filename,'r') as f:
+	with open(assn,'r') as f:
 		for line in f:
 			clust.append(int(line.strip()))
-	return clust
 
-def saveTraingingData(train_data, class_data, path):
-	t_file = path ==""?"train_data.txt":path+"/train_data.txt"
-	c_file = path ==""?"cat_data.txt":path+"/cat_data.txt"
+	centroids = []
+	with open(centr, 'r') as f:
+		for line in f:
+			l = line.strip().split(":")
+			centroids.append([float(l[0]), float(l[1])])
+
+	return [clust, centroids]
+
+def mapLocationToCluster(x, y, centroids):
+	min_dist = None
+	min_clust = None
+	for i ,centr in enumerate(centroids):
+		dist = abs(float(x) - centr[0]) + abs(float(y) - centr[1])
+		if(min_dist == None or dist < min_dist):
+			min_dist = dist
+			min_clust = i
+	return min_clust
+
+def saveTrainingData(train_data, class_data, cat_id, path=""):
+	t_file = "train_data.txt"
+	c_file = "cat_data.txt"
+	cat_file = "cat_id.txt"
+
+	if (path !=""):
+		t_file = path+"/"+ t_file
+		c_file = path+"/"+c_file
+		cat_file = path+"/"+cat_file
+
 	with open(t_file,'w') as f:
 		for class_i in train_data:
+			#print class_i
 			l = []
-			for key,val in class_i:
+			for key,val in class_i.iteritems(): # [{},{},]
 				l.append(key +":"+str(val))
 			f.write(" ".join(l) +"\n")
+
 	with open(c_file, 'w') as f:
-		for key, val in class_data:
+		for key, val in class_data.iteritems():
 			f.write(key+":"+str(val)+"\n")
 
-def loadTrainingData(filename):
-	pass
+	with open(cat_file, 'w') as f:
+		for key, val in cat_id.iteritems():
+			f.write(key+":"+str(val)+"\n")
 
-def classify():
+def loadTrainingData(path=""):
+	t_file = "train_data.txt"
+	c_file = "cat_data.txt"
+	cat_file = "cat_id.txt"
 
+	if (path !=""):
+		t_file = path+"/"+ t_file
+		c_file = path+"/"+c_file
+		cat_file = path+"/"+cat_file
+
+	train_data = []
+	class_data = {}
+	cat_id = {}
+	with open(t_file,'r') as f:
+		for line in f:
+			t_map = {}
+			values = line.strip().split(" ")
+			for val in values:
+				v = val.strip().split(":")
+				t_map[v[0]] = int(v[1])
+			train_data.append(t_map)
+
+	with open(c_file, 'r') as f:
+		for line in f:
+			val = line.strip().split(":")
+			class_data[val[0]] = int(val[1])
+
+	with open(cat_file, 'r') as f:
+		for line in f:
+			val = line.strip().split(":")
+			cat_id[val[0]] = int(val[1])
+
+	return [train_data, class_data, cat_id]
+
+def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust, centroids, n):
+	n = float(n) #number of training instance
+	ad_skipped = 0
+	results = []
+	for index, row in test_data.iterrows():
+
+		i = 0
+		time_i =  "time_" + str(int(row["Dates"].split(" ")[1].split(":")[0])) # 2014-12-24 05:20:00 --> time_5 (hour part of the time)
+		lat_long = str(row['X'])+":"+str(row['Y'])
+		loc_i = "loc_"
+
+		if(lat_long in loc_clusters):
+			loc_i =  loc_i + str(loc_clusters[lat_long]) # Assuming Location is in the data. TODO: for later can map location to the centroids of clusters use the closest as the location.
+		elif( row["Address"] in addr_clust):
+			loc_i = loc_i + str(addr_clust[row["Address"]])
+		else:
+			loc_i = loc_i + str(mapLocationToCluster(float(row['X']), float(row['Y']), centroids))
+
+		PdDistrict = row["PdDistrict"]
+		dofw = row["DayOfWeek"]
+		instance_class = {}
+		for key, val in class_data.iteritems():
+			val = float(val)
+			p_class = float(val/n) * float(train_data[cat_id[key]][time_i]/val) * float(train_data[cat_id[key]][loc_i]/val) * float(train_data[cat_id[key]][PdDistrict]/val) * float(train_data[cat_id[key]][dofw]/val)
+			instance_class[key] = p_class
+			i += 1
+		results.append(instance_class)
+	return results
 
 if __name__ == '__main__':
-	filename = sys.argv[1]
+
 	if(len(sys.argv) < 2):
 		print "Usage: python nb.py <data_file>"
 		sys.exit(0)
+	train_file = sys.argv[1] # trainingdata path
+	test_file = sys.argv[2]
 
-	data = readData(filename) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
+	print "Reading training data... "
+	data = readData(train_file) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
 
-	print train(data, [], 10)
-	sys.exit(0)
 	x = data.loc[:,"X"].values.tolist()
 	y = data.loc[:,"Y"].values.tolist()
+	addr = data.loc[:,"Address"].values.tolist()
 	loc = [[x[i], y[i] ]for i in range(len(data))]
-	k = 10
-	loc_clusters = kmeans(loc, k, 5)
 
+	print "Computing kmeans... k = 100"
+	k = 100
+	#clust, centroids = kmeans(loc, k, 20)
 
-	clust_count = {}
-	for i in range(k):
-		clust_count[i] = 0
+	print "Writing kmeans data to file"
+	#saveKmeans(clust, centroids)
 
-	for i in range(len(data)):
-		clust_count[loc_clusters[i]] = clust_count[loc_clusters[i]] + 1
-		#print x[i], y[i], loc_clusters[i]
-	for key in clust_count:
-		print key, clust_count[key]
+	#print "Reading kmeans..."
+	clust, centroids = readKmeans()
 
-	sys.exit(0)
+	print "Mapping locations to clusters... "
+	#Map address and locations to their clusters
+	loc_key = [str(x[i]) +":"+ str(y[i]) for i in range(len(data))]
+	addr_clust = dict(zip(addr, clust))
+	loc_clusters = dict(zip(loc_key, clust))
 
-	'''
-	data = [[-122.429602623594,37.7179038840514],
-		[122.411836440259,37.730379007001204],
-		[-122.423031175088,37.7854818747419],
-		[-122.439037573428,37.776802154003896],
-		[-122.365565425353,37.8096707013239],
-		[-122.405832474482,37.7857446545609],
-		[-122.40381672894699,37.7814638725237]]
-	'''
-	data = [
-		[32.93177219,-117.35794043],
-		[32.65197767,-117.1949272],
-		[32.76729708,-117.29566966],
-		[32.6256116,-116.90717166],
-		[32.94487559,-116.98993715],
-		[32.63983162,-116.87730954],
-		[32.70968519,-116.88596449],
-		[32.71965351,-116.99009538],
-		[32.53969569,-117.17816327],
-		[32.67525318,-117.44272539],
-		[32.63746539,-117.26713284],
-		[32.59385479,-117.2716769],
-		[32.83985972,-116.97698771],
-		[32.78680855,-117.01853394],
-		[32.73530334,-117.29157678],
-		[32.79851557,-117.40142425],
-		[32.70086177,-117.28439117],
-		[32.75931736,-116.93313824],
-		[32.71845842,-117.29344568],
-		[32.91665375,-117.04057364]
-	]
+	print "Training... "
+	t = train(data,clust, k)
 
-	#train(df)
-	print(kmeans(data, 2, 5))
+	#print "Generating model ... "
+	saveTrainingData(t[0],t[1], t[2])
+	#print "Loading model ... "
+	#t = loadTrainingData()
+
+	print "Loading test data ... "
+	test_d = readData(test_file, column_names_test)
+	print "Classifying... "
+	classify(t[0], t[1], test_d, loc_clusters,t[2], addr_clust, centroids, len(data))
