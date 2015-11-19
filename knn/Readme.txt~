@@ -1,0 +1,11 @@
+new2.py for preprocessing train.csv ->>small for->>new.csv
+creates-testdata.csv,testdata2.csv
+
+preprocess1.py for preprocessing test.csv
+creates-newtestdata.csv,newtestdata2.csv
+
+
+testdata2.csv --->> has the small no. of training data records
+newtestdata2.csv---->> has test data
+
+run knn.py --->> for knn algo
