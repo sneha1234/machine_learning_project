@@ -1,0 +1,15 @@
+trainedData.csv -- contains normalized training data-- full data
+testdata.csv -- contains normalized test data--100 records
+
+knn.py --- uses above to files to compute knn algorithm.
+
+results.csv --- contains result of the knn algorithm.
+(results.csv already has the results as I ran the knn algorithm once).
+
+Command to run the algorithm ---- python knn.py
+and results will be appended to results.csv
+
+Scripts new2.py and preprocess1.py are for normalizing training and test data to produce 
+files trainedData.csv and testdata.csv.Donot run these again. It has to be done only once.
+I have done it already and produced 
+the above files.
