@@ -7,6 +7,7 @@ import sys
 from sets import Set
 import random
 import copy
+import math
 
 column_names = ['Dates','Category','DayOfWeek','PdDistrict','Address','X','Y']
 column_names_test = ['Dates','DayOfWeek','Address','PdDistrict','X','Y']
@@ -225,7 +226,6 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 	results = []
 	for index, row in test_data.iterrows():
 
-		i = 0
 		time_i =  "time_" + str(int(row["Dates"].split(" ")[1].split(":")[0])) # 2014-12-24 05:20:00 --> time_5 (hour part of the time)
 		lat_long = str(row['X'])+":"+str(row['Y'])
 		loc_i = "loc_"
@@ -242,9 +242,36 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 		instance_class = {}
 		for key, val in class_data.iteritems():
 			val = float(val)
-			p_class = float(val/n) * float(train_data[cat_id[key]][time_i]/val) * float(train_data[cat_id[key]][loc_i]/val) * float(train_data[cat_id[key]][PdDistrict]/val) * float(train_data[cat_id[key]][dofw]/val)
-			instance_class[key] = p_class
-			i += 1
+			a = 1+ float(val/n) #p(class)
+			b = 1+ float(train_data[cat_id[key]][time_i]/val) # p(time|class)
+			c = 1+ float(train_data[cat_id[key]][loc_i]/val) # p(time|class)
+			d = 1+ float(train_data[cat_id[key]][PdDistrict]/val) # p(PdDistrict|class)
+			e = 1+ float(train_data[cat_id[key]][dofw]/val) # p(location_cluster|class)
+
+			#if a !=0:
+			a = math.log(a)
+			#if b !=0:
+			b = math.log(b)
+			#if c !=0:
+			c = math.log(c)
+			#if d !=0:
+			d = math.log(d)
+			#if e !=0:
+			e = math.log(e)
+
+			p_class = a + b + c + d + e
+			print p_class
+			instance_class[key] = math.exp(p_class)
+		sum = 0.0
+		for k,v in instance_class.iteritems():
+			sum += v
+		print sum
+
+		for k,v in instance_class.iteritems():
+			instance_class[k] = round(float(v/sum),3)
+
+		print instance_class
+		sys.exit(0)
 		results.append(instance_class)
 	return results
 
@@ -264,14 +291,14 @@ if __name__ == '__main__':
 	addr = data.loc[:,"Address"].values.tolist()
 	loc = [[x[i], y[i] ]for i in range(len(data))]
 
-	print "Computing kmeans... k = 100"
+	#print "Computing kmeans... k = 100"
 	k = 100
 	#clust, centroids = kmeans(loc, k, 20)
 
-	print "Writing kmeans data to file"
+	#print "Writing kmeans data to file"
 	#saveKmeans(clust, centroids)
 
-	#print "Reading kmeans..."
+	print "Reading kmeans..."
 	clust, centroids = readKmeans()
 
 	print "Mapping locations to clusters... "
@@ -280,13 +307,13 @@ if __name__ == '__main__':
 	addr_clust = dict(zip(addr, clust))
 	loc_clusters = dict(zip(loc_key, clust))
 
-	print "Training... "
-	t = train(data,clust, k)
+	#print "Training... "
+	#t = train(data,clust, k)
 
 	#print "Generating model ... "
-	saveTrainingData(t[0],t[1], t[2])
-	#print "Loading model ... "
-	#t = loadTrainingData()
+	#saveTrainingData(t[0],t[1], t[2])
+	print "Loading model ... "
+	t = loadTrainingData()
 
 	print "Loading test data ... "
 	test_d = readData(test_file, column_names_test)
