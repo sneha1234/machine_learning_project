@@ -12,7 +12,7 @@ minL=[]
 xL=[]
 yL=[]
 dict = {'1':31, '2':59, '3':90,'4':120,'5':151,'6':181,'7':212,'8':243,'9':273,'10':304,'11':334,'12':365};
-Id,Dates,DayOfWeek,PdDistrict,X,Y=np.loadtxt('test.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5)) 
+Id,Dates,DayOfWeek,PdDistrict,X,Y=np.loadtxt('testd.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5)) 
 for eachDate in Dates:
 	newval=eachDate.split(' ')
 	date=newval[0].split('/')

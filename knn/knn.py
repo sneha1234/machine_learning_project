@@ -2,8 +2,8 @@ import numpy as np
 import math
 import operator
 from collections import OrderedDict
-Day1,Time1,DayOfWeek1,PdDistrict1,X1,Y1,Category=np.loadtxt('testdata2.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5,6)) 
-Id,Day2,Time2,DayOfWeek2,PdDistrict2,X2,Y2=np.loadtxt('newtestdata2.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5,6)) 
+Day1,Time1,DayOfWeek1,PdDistrict1,X1,Y1,Category=np.loadtxt('trainedData.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5,6)) 
+Id,Day2,Time2,DayOfWeek2,PdDistrict2,X2,Y2,Category2=np.loadtxt('testdata.csv',delimiter=',',unpack=True,dtype='str',skiprows=1, usecols = (0,1,2,3,4,5,6,7)) 
 x=0
 distance=0
 ldict={}
@@ -14,6 +14,8 @@ for record in Id:
 		#print 'x='+str(x)+' '+Day2[x]+' '+str(y)+' '+Day1[y]
 		distance=(pow((float(Day2[x])-float(Day1[y])), 2)+pow((float(Time2[x])-float(Time1[y])), 2)+pow((float(DayOfWeek2[x])-float(DayOfWeek1[y])), 2)+pow((float(Y2[x])-float(Y1[y])), 2)+pow((float(X2[x])-float(X1[y])), 2))
 		if PdDistrict2[x] is PdDistrict1[y]:
+			distance=distance+0
+		else:
 			distance=distance+1
 		distance=math.sqrt(distance)
 		ldict[y]=distance
@@ -29,11 +31,17 @@ for record in Id:
 		if i<k:
 			if i==0:
 				#print r
-				mainldict[x]=[(r,Category[r])]
+				mainldict[x]=[(r,ldict[r],Category[r])]
 			else: 
-				mainldict[x].append((r,Category[r]))
+				mainldict[x].append((r,ldict[r],Category[r]))
 		i+=1
 	x+=1
+	ldict={}
+	print 'computed for x:'+str(x)
 for key in mainldict:
-	print str(key)+' '+str(mainldict[key])+'\n'
+	saveLine=str(key)+' '+Category2[key] +' '+str(mainldict[key])+'\n'
+	print saveLine
+	saveFile=open('results.csv','a')
+	saveFile.write(saveLine)
+	saveFile.close()
 		
