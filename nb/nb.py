@@ -8,6 +8,7 @@ from sets import Set
 import random
 import copy
 import math
+import os.path
 
 column_names = ['Dates','Category','DayOfWeek','PdDistrict','Address','X','Y']
 column_names_test = ['Dates','DayOfWeek','Address','PdDistrict','X','Y']
@@ -280,27 +281,30 @@ if __name__ == '__main__':
 	if(len(sys.argv) < 3):
 		print "Usage: python nb.py <train_data_file> <test_data_file>"
 		sys.exit(0)
-		
+
 	train_file = sys.argv[1] # training data path
 	test_file = sys.argv[2] # test data path
 
 	print "Reading training data... "
-	data = readData(train_file) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
+	data = readData(train_file)
 
 	x = data.loc[:,"X"].values.tolist()
 	y = data.loc[:,"Y"].values.tolist()
 	addr = data.loc[:,"Address"].values.tolist()
 	loc = [[x[i], y[i] ]for i in range(len(data))]
 
-	#print "Computing kmeans... k = 100"
-	k = 100
-	#clust, centroids = kmeans(loc, k, 20)
-
-	#print "Writing kmeans data to file"
-	#saveKmeans(clust, centroids)
-
-	print "Reading kmeans..."
-	clust, centroids = readKmeans()
+	print "Computing kmeans... k = 100"
+	
+	k = 200
+	clust = None
+	centroids = None
+	if not os.path.exists("kmeans.txt"):
+		clust, centroids = kmeans(loc, k, 20)
+		print "Writing kmeans data to file"
+		saveKmeans(clust, centroids)
+	else:
+		print "Reading kmeans..."
+		clust, centroids = readKmeans()
 
 	print "Mapping locations to clusters... "
 	#Map address and locations to their clusters
@@ -308,15 +312,19 @@ if __name__ == '__main__':
 	addr_clust = dict(zip(addr, clust))
 	loc_clusters = dict(zip(loc_key, clust))
 
-	#print "Training... "
-	#t = train(data,clust, k)
+	t = None
+	if not os.path.exists("train_data.txt"):
+		print "Training... "
+		t = train(data,clust, k)
+		print "Saving model ... "
+		saveTrainingData(t[0],t[1], t[2])
+	else:
+		print "Loading model ... "
+		t = loadTrainingData()
+	
 
-	#print "Generating model ... "
-	#saveTrainingData(t[0],t[1], t[2])
-	print "Loading model ... "
-	t = loadTrainingData()
-
-	print "Loading test data ... "
+	print "Reading test data ... "
 	test_d = readData(test_file, column_names_test)
+	
 	print "Classifying... "
 	classify(t[0], t[1], test_d, loc_clusters,t[2], addr_clust, centroids, len(data))
