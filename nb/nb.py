@@ -277,11 +277,12 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 
 if __name__ == '__main__':
 
-	if(len(sys.argv) < 2):
-		print "Usage: python nb.py <data_file>"
+	if(len(sys.argv) < 3):
+		print "Usage: python nb.py <train_data_file> <test_data_file>"
 		sys.exit(0)
-	train_file = sys.argv[1] # trainingdata path
-	test_file = sys.argv[2]
+		
+	train_file = sys.argv[1] # training data path
+	test_file = sys.argv[2] # test data path
 
 	print "Reading training data... "
 	data = readData(train_file) #readData("/Users/emmanuj/projects/crime_classification/data/train.csv")
