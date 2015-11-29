@@ -5,16 +5,16 @@
 
 import math
 import random
-import numpy as np
 import sys
 import pandas as pd
 import time, datetime
-
+import numpy as np
+random.seed(0)
 class BP:
 	def __init__(self, training_data, mu, mo, n_in, n_out, n_hidden):
 		self.training_data = training_data
 		self.mu = mu # learning rate
-		self.mo = mo #momentum
+		self.mo = mo # momentum
 		self.n_out = n_out
 		self.n_in = n_in + 1 # plus one bias node
 		self.n_hidden = n_hidden
@@ -28,14 +28,13 @@ class BP:
 		self.out_weights = np.matrix([[0.0] * self.n_out] * self.n_hidden)
 		self.in_current = np.matrix([[0.0] * self.n_hidden] * self.n_in)
 		self.out_current = np.matrix([[0.0] * self.n_out] * self.n_hidden)
-		random.seed(0)
 
 		for i in range(self.n_in):
 			for j in range(n_hidden):
-				self.in_weights[i,j] = random.uniform(-0.05, 0.05)
+				self.in_weights[i,j] = random.uniform(-1, 1)
 		for i in range(self.n_hidden):
 			for j in range(self.n_out):
-				self.out_weights[i,j] = random.uniform(-0.05, 0.05)
+				self.out_weights[i,j] = random.uniform(-1, 1)
 		#print self.in_weights
 		#print self.out_weights[0,0], self.out_weights[1,0]
 	def feed_forward(self, inp):
@@ -57,7 +56,7 @@ class BP:
 		for k in range(self.n_out):
 			sum = 0.0
 			for j in range(self.n_hidden):
-				sum = sum + self.hidden_out[j] * self.out_weights[j, k]
+				sum = sum + self.hidden_out[j] * self.out_weights[j,k]
 			self.final_out[k] = math.tanh(sum)
 
 		return self.final_out[:]
@@ -86,7 +85,7 @@ class BP:
 				change = output_deltas[k]*self.hidden_out[j]
 				self.out_weights[j,k] = self.out_weights[j,k] + self.mu * change + self.mo * self.out_current[j,k]
 				self.out_current[j,k] = change
-				#print N*change, M*self.out_current[j][k]
+				#print N*change, M*self.out_current[j,k]
 
 		# update input weights
 		for i in range(self.n_in):
@@ -114,7 +113,7 @@ class BP:
 		print('Output weights:')
 		print self.out_weights
 
-	def train(self, iterations=2000):
+	def train(self, iterations=3000):
 		# N: learning rate
 		# M: momentum factor
 
@@ -136,35 +135,34 @@ if __name__ == '__main__':
 		sys.exit(0)
 	print "Reading training data..."
 	df = pd.read_csv(sys.argv[1], quoting=1, header=None)
-
+	#print df
 	train_data = []
 	for i, row in df.iterrows():
-		cls = [0] * 39
-		cls[int(row[5])] = 1
-		train_data.append([[row[0], row[1],row[2],row[3], row[4]], cls])
+		cls = [0] * 3
+		cls[int(row[4])] = 1
+		train_data.append([[row[0], row[1],row[2],row[3]], cls])
+	#print train_data
 
 	df = None
 
-	mu=0.05 #learning rate
-	mo=0.1 # moment
+	mu=0.01 #learning rate
+	mo=0.01 # moment
 
 	# create a network with 5 input, 39 output and 10 hidden nodes
-	n = BP(train_data, mu, mo, 5, 39, 10)
-	
+	n = BP(train_data, mu, mo, 4, 3, 4)
+
 	# train it with some patterns
 	print "Training..."
 	n.train()
 	n.weights() # print the weights
 
-	print "Reading test data..."
-	df = pd.read_csv(sys.argv[2], quoting=1, header=None)
+	#print "Reading test data..."
+	#df = pd.read_csv(sys.argv[2], quoting=1, header=None)
 
-	test_data = []
-	for i, row in df.iterrows():
-		test_data.append([[row[0], row[1],row[2],row[3], row[4]]])
+	test_data = [[[5.1,3.5,1.4,0.2]]]
+	#for i, row in df.iterrows():
+	#	test_data.append([[row[0], row[1],row[2],row[3], row[4]]])
 
 	# test it
-	print "Testing..."
+	#print "Testing..."
 	n.test(test_data)
-
-

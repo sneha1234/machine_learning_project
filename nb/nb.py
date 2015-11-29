@@ -232,7 +232,7 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 		loc_i = "loc_"
 
 		if(lat_long in loc_clusters):
-			loc_i =  loc_i + str(loc_clusters[lat_long]) # Assuming Location is in the data. TODO: for later can map location to the centroids of clusters use the closest as the location.
+			loc_i =  loc_i + str(loc_clusters[lat_long]) 
 		elif( row["Address"] in addr_clust):
 			loc_i = loc_i + str(addr_clust[row["Address"]])
 		else:
@@ -294,7 +294,7 @@ if __name__ == '__main__':
 	loc = [[x[i], y[i] ]for i in range(len(data))]
 
 	print "Computing kmeans... k = 100"
-	
+
 	k = 200
 	clust = None
 	centroids = None
@@ -321,10 +321,10 @@ if __name__ == '__main__':
 	else:
 		print "Loading model ... "
 		t = loadTrainingData()
-	
+
 
 	print "Reading test data ... "
 	test_d = readData(test_file, column_names_test)
-	
+
 	print "Classifying... "
 	classify(t[0], t[1], test_d, loc_clusters,t[2], addr_clust, centroids, len(data))

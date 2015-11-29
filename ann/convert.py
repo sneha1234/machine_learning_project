@@ -23,7 +23,7 @@ def readData(filename, colnames= column_names):
 def convertData(df, test_data=False):
 	pddistr = pd.unique(df.PdDistrict.ravel()).tolist()
 	pddistr_key = dict(zip(pddistr, range(0, len(pddistr))))
-	
+
 	data = []
 
 	if not test_data:
@@ -35,7 +35,7 @@ def convertData(df, test_data=False):
 		row_data = []
 		# convert date to timestamp
 		dt = datetime.datetime.strptime(row["Dates"], "%Y-%m-%d %H:%M:%S")
-		ts = time.mktime(dt.timetuple()) + (dt.microsecond / 1000000.0)
+		ts = (time.mktime(dt.timetuple()) + (dt.microsecond / 1000000.0)) * 0.000000001
 
 		row_data.append(ts)
 
@@ -47,21 +47,24 @@ def convertData(df, test_data=False):
 
 		row_data.append(row["X"])
 		row_data.append(row["Y"])
-		
+
 		if not test_data:
 			# Convert Category
 			row_data.append(cat_key[row["Category"]])
 		data.append(row_data)
-		
+		#if i == 100: break
+
 	'''
 	#normalize
 	sum_data = np.sum(data, axis=0)
 
 	for i,row in enumerate(data):
 		for j, d in enumerate(row):
-			data[i][j] = d/float(sum_data[j])
-	'''
+			if j != len(row)-1:
+				data[i][j] = d/float(sum_data[j])
 
+	#print data
+	'''
 	return data
 
 if __name__ == '__main__':
@@ -72,10 +75,9 @@ if __name__ == '__main__':
 
 	# convert training and test and write to file
 	df = readData(sys.argv[1])
+	print "Writing training to file"
 	writeData("train_conv.txt", convertData(df))
 
+	print "writing test to file"
 	df = readData(sys.argv[2], column_names_test)
 	writeData("test_conv.txt", convertData(df, True))
-
-	df = None
-	
