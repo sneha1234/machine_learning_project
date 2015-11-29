@@ -272,7 +272,9 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 
 		for k,v in instance_class.iteritems():
 			instance_class[k] = round(float(v/sum),4)
-
+		instance_class = dict(sorted(instance_class.items(), key=operator.itemgetter(1)))
+		print instance_class
+		print ""
 		results.append(instance_class)
 	return results
 
