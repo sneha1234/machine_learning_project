@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N fb-uf
+#PBS -l select=1:ncpus=16:mem=100gb
+#PBS -l walltime=10:00:00
+#PBS -M emmanuj@g.clemson.edu
+
+cd $PBS_O_WORKDIR
+
+module load gcc/4.8.1 python/3.4
+python np.py ../data/train.csv ../data/test.csv

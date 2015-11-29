@@ -23,6 +23,8 @@ def kmeans(data, k, niter): # Data is a list of tuples
 	# First do random selection of k points
 	centroids = random.sample(data, k)
 	for r in range(niter):
+		#if r%5 == 0:
+		#	print "@ iteration: ", r
 		clusters = {}
 		for i in range(k):
 			clusters[i] = []
@@ -232,7 +234,7 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 		loc_i = "loc_"
 
 		if(lat_long in loc_clusters):
-			loc_i =  loc_i + str(loc_clusters[lat_long]) 
+			loc_i =  loc_i + str(loc_clusters[lat_long])
 		elif( row["Address"] in addr_clust):
 			loc_i = loc_i + str(addr_clust[row["Address"]])
 		else:
@@ -261,18 +263,16 @@ def classify(train_data, class_data, test_data, loc_clusters, cat_id, addr_clust
 			e = math.log(e)
 
 			p_class = a + b + c + d + e
-			print p_class
+			#print p_class
 			instance_class[key] = math.exp(p_class)
 		sum = 0.0
 		for k,v in instance_class.iteritems():
 			sum += v
-		print sum
+		#print sum
 
 		for k,v in instance_class.iteritems():
-			instance_class[k] = round(float(v/sum),3)
+			instance_class[k] = round(float(v/sum),4)
 
-		print instance_class
-		sys.exit(0)
 		results.append(instance_class)
 	return results
 
@@ -293,13 +293,13 @@ if __name__ == '__main__':
 	addr = data.loc[:,"Address"].values.tolist()
 	loc = [[x[i], y[i] ]for i in range(len(data))]
 
-	print "Computing kmeans... k = 100"
+	print "Computing kmeans... k = 2000"
 
-	k = 200
+	k = 1000
 	clust = None
 	centroids = None
 	if not os.path.exists("kmeans.txt"):
-		clust, centroids = kmeans(loc, k, 20)
+		clust, centroids = kmeans(loc, k, 40)
 		print "Writing kmeans data to file"
 		saveKmeans(clust, centroids)
 	else:
@@ -321,7 +321,6 @@ if __name__ == '__main__':
 	else:
 		print "Loading model ... "
 		t = loadTrainingData()
-
 
 	print "Reading test data ... "
 	test_d = readData(test_file, column_names_test)
