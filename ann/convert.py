@@ -3,10 +3,11 @@ import pandas as pd
 import sys
 import time, datetime
 import numpy as np
+import random
 
 column_names = ['Dates','Category','DayOfWeek','PdDistrict','X','Y'] # 'Address' not included for now
 column_names_test = ['Dates','DayOfWeek','PdDistrict','X','Y'] # 'Address' not included for now
-dofweek = {"Sunday":0,"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6}
+dofweek = {"Sunday":1.1,"Monday":1.2,"Tuesday":1.3,"Wednesday":1.4,"Thursday":1.5,"Friday":1.6,"Saturday":1.7}
 
 def writeData(filename, data):
 	with open(filename, "w") as f:
@@ -22,7 +23,7 @@ def readData(filename, colnames= column_names):
 
 def convertData(df, test_data=False):
 	pddistr = pd.unique(df.PdDistrict.ravel()).tolist()
-	pddistr_key = dict(zip(pddistr, range(0, len(pddistr))))
+	pddistr_key = dict(zip(pddistr, range(1, len(pddistr)+1)))
 
 	data = []
 
@@ -34,11 +35,11 @@ def convertData(df, test_data=False):
 	for i, row in df.iterrows():
 		row_data = []
 		# convert date to timestamp
-		dt = datetime.datetime.strptime(row["Dates"], "%Y-%m-%d %H:%M:%S")
-		ts = (time.mktime(dt.timetuple()) + (dt.microsecond / 1000000.0)) * 0.000000001
-
-		row_data.append(ts)
-
+		#dt = datetime.datetime.strptime(row["Dates"], "%Y-%m-%d %H:%M:%S")
+		#ts = (time.mktime(dt.timetuple()) + (dt.microsecond / 1000000.0))
+		ts = row["Dates"].strip().split(" ")[1].split(":")
+		row_data.append(int(ts[0]))
+		row_data.append(int(ts[1]))
 		# convert dofw
 		row_data.append(dofweek[row["DayOfWeek"]])
 
@@ -52,19 +53,24 @@ def convertData(df, test_data=False):
 			# Convert Category
 			row_data.append(cat_key[row["Category"]])
 		data.append(row_data)
-		#if i == 100: break
+		#if i == 1000: break
 
 	'''
-	#normalize
+	# subtract mean
 	sum_data = np.sum(data, axis=0)
-
+	for i,row in enumerate(data):
+		for j, d in enumerate(row):
+			if j != len(row)-1:
+				data[i][j] = d-(float(sum_data[j])/len(data) *1.0)
+	# and normalize
+	sum_data = np.sum(data, axis=0)
 	for i,row in enumerate(data):
 		for j, d in enumerate(row):
 			if j != len(row)-1:
 				data[i][j] = d/float(sum_data[j])
-
-	#print data
 	'''
+	#print data
+	random.shuffle(data)
 	return data
 
 if __name__ == '__main__':
@@ -78,6 +84,6 @@ if __name__ == '__main__':
 	print "Writing training to file"
 	writeData("train_conv.txt", convertData(df))
 
-	print "writing test to file"
-	df = readData(sys.argv[2], column_names_test)
-	writeData("test_conv.txt", convertData(df, True))
+	#print "writing test to file"
+	#df = readData(sys.argv[2], column_names_test)
+	#writeData("test_conv.txt", convertData(df, True))

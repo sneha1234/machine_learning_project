@@ -17,8 +17,8 @@
 
 class BPNN {
 private:
-    float learnRate = 0.01;
-    const float momentum = 0.01;
+    float learnRate = 0.05;
+    const float momentum = 0.02;
     int input_count; // # number of input nodes
     int out_count; // # number of output nodes
     int hidden_count; // # hidden nodes
@@ -44,7 +44,7 @@ public:
     hidden_out(n_hidden, 1.0),
     final_out(n_out, 1.0)
     {
-        generateRandomMatrix(in_weights, input_count, hidden_count, -0.2, 0.2);
+        generateRandomMatrix(in_weights, input_count, hidden_count, -1, 1);
 		generateRandomMatrix(out_weights, hidden_count, out_count, -1, 1);
 		initializeMatrix(cur_in_weights, input_count, hidden_count);
 		initializeMatrix(cur_out_weights, hidden_count, out_count);
@@ -71,8 +71,27 @@ public:
         return lo + (static_cast<float> (rand()) / static_cast<float> (RAND_MAX / (hi - lo)));
     }
 
-	//void normalize
+	void normalize(std::vector<double>& vec){
+        double hmin = *std::min_element(vec.begin(), vec.end());
+        double hsum = 0.0;
+        for(int j=0; j<vec.size();j++ ){
+			vec[j] = vec[j] + hmin;
+            hsum+=vec[j];
+		}
 
+        for(int j=0; j<vec.size();j++ ){
+			vec[j] = vec[j] / hsum;
+		}
+    }
+    double sigmoid(double y){
+        return tanh(y);
+        //return 1/(1+exp(-y));
+    }
+
+    double dsigmoid(double y){
+        return ( 1.0 - pow(y,2));
+        //return (1 - (1/(1+exp(-y))));
+    }
 	void feed_forward(std::vector<double>& inputs){
 
 		if (inputs.size() != input_count - 1){
@@ -82,24 +101,25 @@ public:
 
 		//copy inputs over. exclude the last index
 		input_xi = std::vector<double>(inputs.begin(), inputs.end() - 1);
-
+        //normalize(input_xi);
 		// input from in nodes to hidden nodes is weight and activated
 		for(int j=0; j<hidden_count;j++ ){
 			double sum = 0.0;
 			for (int i = 0; i < input_count; i++) {
 				sum = sum + input_xi[i] * in_weights[i][j];
 			}
-			hidden_out[j] = tanh(sum);
+			hidden_out[j] = sigmoid(sum);
 		}
-
+        //normalize(hidden_out);
 		// input from hidden nodes to output nodes is further weight and activated
 		for(int k=0; k<out_count;k++ ){
 			double sum = 0.0;
 			for (int j = 0; j < hidden_count; j++) {
 				sum = sum + hidden_out[j] * out_weights[j][k];
 			}
-			final_out[k] = tanh(sum);
+			final_out[k] = sigmoid(sum);
 		}
+        //normalize(final_out);
 	}
 
 	double back_propagate(std::vector<double>& targets){
@@ -113,7 +133,7 @@ public:
 		std::vector<double> output_deltas(out_count);
 		for(int k=0;k<out_count;k++){
 			const double error = targets[k] - final_out[k];
-			output_deltas[k] = ( 1.0 - pow(final_out[k],2)) * error;
+			output_deltas[k] = dsigmoid(final_out[k]) * error;
 		}
 
 		//  calculate error terms for hidden
@@ -123,7 +143,7 @@ public:
 			for(int k=0;k<out_count;k++){
 				error = error + output_deltas[k] * out_weights[j][k];
 			}
-			hidden_deltas[j] = (1.0 - pow(hidden_out[j],2)) * error;
+			hidden_deltas[j] = dsigmoid(hidden_out[j]) * error;
 		}
 
 		// update output weights
@@ -142,6 +162,7 @@ public:
 				cur_in_weights[i][j] = w_change;
 			}
 		}
+
 		// calculate error
 		double error = 0.0;
 		for(int k=0;k<targets.size();k++){
@@ -154,17 +175,19 @@ public:
 		std::streamsize ss = std::cout.precision();
 		for(int i=0;i< niter;i++){
 			double error = 0.0;
-			for(int j=0;j< tdata.size();j++){
-				feed_forward(tdata[j][0]);
-				error += back_propagate(tdata[j][1]);
+            //we train using mini batches
+			for(int k = 0;k < tdata.size();k++){
+                int j = k;//rand() % tdata.size(); // uncomment to randomize
+                feed_forward(tdata[j][0]);
+			    error += back_propagate(tdata[j][1]);
 			}
-			if(i% 10 == 0){
+			if(i% 100 == 0){
 				std::cout<<"Error "<<std::setprecision(5)<<error<<ss<<std::endl;
 			}
-			if(error < 4){
-				std::cout<<"Error "<<std::setprecision(5)<<error<<ss<<std::endl;
-				break;
-			}
+			//if(error < 42){
+			//	std::cout<<"Error "<<std::setprecision(5)<<error<<ss<<std::endl;
+			//	break;
+			//}
 			//std::cout<<i<<std::endl;
 		}
 	}

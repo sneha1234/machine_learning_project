@@ -47,9 +47,9 @@ setclang:
 
 # Phony target to use g++ for compile and linking
 setgcc:
-	@echo "Setting g++-4.9"
-	$(eval CXX = g++-4.9)
-	$(eval CXX_LINK = g++-4.9)
+	@echo "Setting g++"
+	$(eval CXX = g++)
+	$(eval CXX_LINK = g++)
 
 # $< refers to the first dependency
 # Uses static pattern rule to keep from compiling all

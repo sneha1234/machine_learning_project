@@ -18,9 +18,9 @@ int main(int argc, char** argv) {
     srand (static_cast <unsigned> (time(0)));
 
 	//params
-	int n_in = 5;
-	int n_out = 39;
-	int n_hidden = 5;
+	int n_in = 9;
+	int n_out = 2;
+	int n_hidden = 4;
 
 	// read data
 	std::string tfilename(argv[1]);
@@ -32,10 +32,15 @@ int main(int argc, char** argv) {
 		line = Util::trim(line);
 		std::vector<double> values = Util::split_numeric(line, delim);
 
-
+        std::cout<<"here"<<std::endl;
 		std::vector<double> inp(values.begin(), values.end()-1);
 		std::vector<double> cls(n_out);
-		cls[values[values.size()-1]] = 1.0;
+        // if(values[values.size()-1] > 1){
+            //cls[rand() % 2] = 1.0;
+        //}else{
+        cls[(values[values.size()-1])] = 1.0;
+        //}
+
 
 		std::vector< std::vector<double> > data(2);
 		data[0] = inp;
@@ -50,7 +55,7 @@ int main(int argc, char** argv) {
 	//bp.printWeights();
 
 	//test
-	double test_data[] = {1.43157558,3,0,-122.425891675,37.7745985957};
+	double test_data[] = {5,1,1,1,2,1,3,1,1,2};
 	std::vector<double> t (test_data, test_data + sizeof(test_data) / sizeof(double) );
 
 	std::vector<std::vector<double> > v;
